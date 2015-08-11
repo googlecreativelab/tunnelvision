@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="unselected" type="color">#FFFFFF</item>
+    <item name="selected" type="color">#ee2a7b</item>
+    <item name="black" type="color">#000000</item>
+    <item name="drawer_background" type="color">#282828</item>
+    <item name="drawer_background_translucent" type="color">#88282828</item>
+</resources>

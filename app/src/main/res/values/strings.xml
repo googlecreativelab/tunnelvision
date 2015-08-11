@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Tunnel Vision</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="dialog_deleting_file">Deleting File…</string>
+    <string name="dialog_deleting_files">Deleting Files…</string>
+    <string name="share_description">#TunnelVision</string>
+
+</resources>

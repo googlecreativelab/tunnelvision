@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextureView
+        android:id="@+id/texture"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true" />
+
+
+    <SeekBar
+        android:id="@+id/delaySeekBar"
+        android:max="5"
+        android:progress="5"
+        android:progressDrawable="@drawable/scrubber_progress"
+        android:thumb="@drawable/seekbar_thumb"
+        android:layout_marginBottom="12dp"
+        android:layout_width="64dp"
+        android:layout_height="24dp"
+        android:layout_alignBottom="@+id/cameraToggleButton"
+        android:layout_marginRight="30dp"
+        android:layout_toStartOf="@+id/recordToggleButton"/>
+
+    <ImageButton
+        android:background="@drawable/toggle_camera"
+        android:layout_width="48dp"
+        android:layout_height="40dp"
+        android:id="@+id/cameraToggleButton"
+        android:layout_marginStart="26dp"
+        android:layout_alignBottom="@+id/recordToggleButton"
+        android:layout_marginBottom="12dp"
+        android:layout_toEndOf="@+id/recordToggleButton"/>
+
+    <ImageButton
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:id="@+id/recordToggleButton"
+        android:background="@drawable/record_off"
+        android:layout_marginBottom="26dp"
+        android:layout_above="@+id/filterLayout"
+        android:layout_centerHorizontal="true"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/filterLayout"
+        android:orientation="vertical"
+        android:background="@color/drawer_background"
+        android:layout_alignParentBottom="true"
+        >
+
+        <ImageButton
+            android:layout_width="12dp"
+            android:layout_height="8dp"
+            android:id="@+id/collapseButton"
+            android:background="@drawable/collapse_arrow"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
+            android:layout_above="@+id/horizontalScrollView"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"/>
+
+
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/horizontalScrollView"
+            android:scrollbars="none" >
+
+
+            <LinearLayout
+                android:id="@+id/filterInnerLayout"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="14dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+
+                <RadioGroup android:id="@+id/filterRadioGroup"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+
+                    <com.androidexperiments.tunnelvision.widget.FilterRadioButton
+                        style="@style/CustomRadio"
+                        android:checked="true"
+                        android:id="@+id/filterTunnelRepeat"
+                        android:background="@drawable/tunnel_repeat_shader"
+                        android:layout_marginStart="13dp"/>
+
+                    <com.androidexperiments.tunnelvision.widget.FilterRadioButton
+                        style="@style/CustomRadio"
+                        android:id="@+id/filterTunnel"
+                        android:background="@drawable/tunnel_shader"
+                        android:layout_marginStart="30dp"/>
+
+                    <com.androidexperiments.tunnelvision.widget.FilterRadioButton
+                        style="@style/CustomRadio"
+                        android:id="@+id/filterTwirl"
+                        android:background="@drawable/twirl_shader"
+                        android:layout_marginStart="30dp"/>
+
+                    <com.androidexperiments.tunnelvision.widget.FilterRadioButton
+                        style="@style/CustomRadio"
+                        android:id="@+id/filterNoise"
+                        android:layout_marginStart="30dp"
+                        android:background="@drawable/noise_shader"/>
+
+                    <com.androidexperiments.tunnelvision.widget.FilterRadioButton
+                        style="@style/CustomRadio"
+                        android:id="@+id/filterNoiseBitmap"
+                        android:layout_marginStart="30dp"
+                        android:background="@drawable/noise_bitmap_shader"/>
+
+
+                    <com.androidexperiments.tunnelvision.widget.FilterRadioButton
+                        style="@style/CustomRadio"
+                        android:id="@+id/filterVertical"
+                        android:layout_marginStart="30dp"
+                        android:layout_marginEnd="13dp"
+                        android:background="@drawable/vertical_shader"/>
+
+                </RadioGroup>
+
+
+
+            </LinearLayout>
+
+        </HorizontalScrollView>
+
+    </LinearLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text=""
+        android:textColor="@color/unselected"
+        android:textAlignment="center"
+        android:id="@+id/timeElapsedTextView"
+        android:layout_below="@+id/cameraToggleButton" android:layout_centerHorizontal="true"/>
+
+</RelativeLayout>

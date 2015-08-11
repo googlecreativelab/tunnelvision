@@ -1,0 +1,16 @@
+.gradle
+/local.properties
+*.iml
+/.idea
+.DS_Store
+/build
+/_unversioned/
+
+#internal
+.git-gerrit
+.git-github
+.gitignore-gerrit
+.gitignore-github
+release/
+launch-files/
+swap_current.sh
