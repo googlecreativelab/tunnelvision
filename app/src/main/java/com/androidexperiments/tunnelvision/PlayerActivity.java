@@ -16,7 +16,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import butterknife.ButterKnife;
-import butterknife.InjectView;
+import butterknife.Bind;
 import butterknife.OnClick;
 
 /**
@@ -32,7 +32,7 @@ public class PlayerActivity extends FragmentActivity implements AndroidUtils.OnD
 
     protected File mFileToPlay;
 
-    @InjectView(R.id.video_view)
+    @Bind(R.id.video_view)
     VideoView mVideoView;
 
 
@@ -41,7 +41,7 @@ public class PlayerActivity extends FragmentActivity implements AndroidUtils.OnD
     {
         super.onCreate(savedInstance);
         setContentView(R.layout.activity_player);
-        ButterKnife.inject(this);
+        ButterKnife.bind(this);
 
         Bundle extras = getIntent().getExtras();
 

@@ -12,7 +12,7 @@ import android.widget.VideoView;
 import com.androidexperiments.tunnelvision.utils.AndroidUtils;
 
 import butterknife.ButterKnife;
-import butterknife.InjectView;
+import butterknife.Bind;
 import butterknife.OnClick;
 
 /**
@@ -23,7 +23,7 @@ public class SplashScreenActivity extends FragmentActivity implements MediaPlaye
 
     protected static final String TAG = SplashScreenActivity.class.getSimpleName();
 
-    @InjectView(R.id.splashvideo)
+    @Bind(R.id.splashvideo)
     VideoView mSplashVideo;
 
 
@@ -35,7 +35,7 @@ public class SplashScreenActivity extends FragmentActivity implements MediaPlaye
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splashscreen);
 
-        ButterKnife.inject(this);
+        ButterKnife.bind(this);
 
         mSplashVideo.setOnTouchListener(new View.OnTouchListener(){
 

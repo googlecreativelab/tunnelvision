@@ -68,8 +68,8 @@ public class SlitScanRenderer extends CameraRenderer
      */
     public SlitScanRenderer(Context context, SurfaceTexture texture, CameraFragment cameraFragment, int width, int height, int numSlits)
     {
-        super(context, texture, cameraFragment, width, height);
-
+        super(context, texture, width, height);
+        setCameraFragment(cameraFragment);
         mNumSlits = numSlits;
 
     }

@@ -1,12 +1,13 @@
 package com.androidexperiments.tunnelvision;
 
-import android.app.Activity;
-import android.app.FragmentTransaction;
+import android.Manifest;
 import android.content.Intent;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.TextureView;
@@ -19,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.androidexperiments.shadercam.fragments.CameraFragment;
+import com.androidexperiments.shadercam.fragments.PermissionsHelper;
 import com.androidexperiments.shadercam.gl.CameraRenderer;
 import com.androidexperiments.tunnelvision.datatextures.DataSamplerAdapter;
 import com.androidexperiments.tunnelvision.gl.SlitScanRenderer;
@@ -26,42 +28,44 @@ import com.androidexperiments.tunnelvision.utils.AndroidUtils;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import butterknife.ButterKnife;
-import butterknife.InjectView;
+import butterknife.Bind;
 import butterknife.OnClick;
 
 
-public class MainActivity extends Activity implements CameraRenderer.OnRendererReadyListener
+public class MainActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener,
+        PermissionsHelper.PermissionsListener
 {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String TAG_CAMERA_FRAGMENT = "tag_cam_frag";
 
-    @InjectView(R.id.texture)
+    @Bind(R.id.texture)
     TextureView mTextureView;
 
-    @InjectView(R.id.delaySeekBar)
+    @Bind(R.id.delaySeekBar)
     SeekBar mDelaySeekBar;
 
-    @InjectView(R.id.collapseButton)
+    @Bind(R.id.collapseButton)
     ImageButton mCollapseButton;
 
-    @InjectView(R.id.cameraToggleButton)
+    @Bind(R.id.cameraToggleButton)
     ImageButton mCameraToggleButton;
 
-    @InjectView(R.id.recordToggleButton)
+    @Bind(R.id.recordToggleButton)
     ImageButton mRecordButton;
 
-    @InjectView(R.id.timeElapsedTextView)
+    @Bind(R.id.timeElapsedTextView)
     TextView mTimeElapsedTextView;
 
-    @InjectView(R.id.horizontalScrollView)
+    @Bind(R.id.horizontalScrollView)
     HorizontalScrollView mHorizontalScrollView;
 
-    @InjectView(R.id.filterRadioGroup)
+    @Bind(R.id.filterRadioGroup)
     RadioGroup mRadioGroup;
 
     private File mCurrentVideoFile;
@@ -82,13 +86,16 @@ public class MainActivity extends Activity implements CameraRenderer.OnRendererR
     private int mSecondsElapsed = 0;
     private Handler mTimeElapsedHandler = new Handler();
 
+    private PermissionsHelper mPermissionsHelper;
+    private boolean mPermissionsSatisfied = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ButterKnife.inject(this);
+        ButterKnife.bind(this);
 
         setupCameraFragment(CameraFragment.CAMERA_FORWARD);
 
@@ -147,6 +154,10 @@ public class MainActivity extends Activity implements CameraRenderer.OnRendererR
             }
         });
 
+        //setup permissions for M or start normally
+        if(PermissionsHelper.isMorHigher())
+            setupPermissions();
+
     }
 
     //the click is on the layout so its not such a difficult target
@@ -156,6 +167,18 @@ public class MainActivity extends Activity implements CameraRenderer.OnRendererR
         int nextVisibility = mHorizontalScrollView.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE;
         mCollapseButton.setBackgroundResource(nextVisibility == View.VISIBLE ? R.drawable.collapse_arrow : R.drawable.expand_arrow);
         mHorizontalScrollView.setVisibility(nextVisibility);
+    }
+
+
+
+    private void setupPermissions() {
+        mPermissionsHelper = PermissionsHelper.attach(this);
+        mPermissionsHelper.setRequestedPermissions(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+
+        );
     }
 
 
@@ -257,7 +280,7 @@ public class MainActivity extends Activity implements CameraRenderer.OnRendererR
         //mCameraFragment.setSurfaceTextureListener(mCameraTextureListener);
 
 
-        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(mCameraFragment, TAG_CAMERA_FRAGMENT);
         transaction.commit();
 
@@ -321,6 +344,12 @@ public class MainActivity extends Activity implements CameraRenderer.OnRendererR
         super.onResume();
         mIsPaused = false;
         AndroidUtils.goFullscreen(this);
+        if(PermissionsHelper.isMorHigher() && !mPermissionsSatisfied) {
+            if(!mPermissionsHelper.checkPermissions())
+                return;
+            else
+                mPermissionsSatisfied = true; //extra helper as callback sometimes isnt quick enough for future results
+        }
 
         //if the recording was interrupted by pausing,
         //show the PlayerActivity now
@@ -424,10 +453,14 @@ public class MainActivity extends Activity implements CameraRenderer.OnRendererR
         mRenderer.setOnRendererReadyListener(this);
 
         mDataSamplerAdapter = new DataSamplerAdapter(getApplicationContext(), width, height);
-        mRenderer.setSampler(mDataSamplerAdapter.next());
-        mRenderer.start();
-
-        mCameraFragment.configureTransform(width, height);
+        if (mPermissionsSatisfied) {
+            mRenderer.setSampler(mDataSamplerAdapter.next());
+            mRenderer.start();
+            mCameraFragment.configureTransform(width, height);
+        } else {
+            if(PermissionsHelper.isMorHigher())
+                setupPermissions();
+        }
     }
 
 
@@ -502,4 +535,16 @@ public class MainActivity extends Activity implements CameraRenderer.OnRendererR
         }
     };
 
+    @Override
+    public void onPermissionsSatisfied() {
+        mPermissionsSatisfied = true;
+    }
+
+    @Override
+    public void onPermissionsFailed(String[] strings) {
+        Log.e(TAG, "onPermissionsFailed()" + Arrays.toString(strings));
+        mPermissionsSatisfied = false;
+        Toast.makeText(this, "shadercam needs all permissions to function, please try again.", Toast.LENGTH_LONG).show();
+        this.finish();
+    }
 }

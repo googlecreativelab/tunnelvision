@@ -12,7 +12,7 @@ import com.androidexperiments.tunnelvision.utils.AndroidUtils;
 import java.io.File;
 
 import butterknife.ButterKnife;
-import butterknife.InjectView;
+import butterknife.Bind;
 import butterknife.OnClick;
 
 /**
@@ -25,7 +25,7 @@ public class ShareActivity extends FragmentActivity
 
     protected File mFileToShare;
 
-    @InjectView(R.id.share_video_view)
+    @Bind(R.id.share_video_view)
     VideoView mVideoView;
 
     @Override
@@ -34,7 +34,7 @@ public class ShareActivity extends FragmentActivity
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_share);
-        ButterKnife.inject(this);
+        ButterKnife.bind(this);
 
 
         Bundle extras = getIntent().getExtras();
