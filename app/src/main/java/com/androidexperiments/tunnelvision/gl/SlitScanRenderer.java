@@ -5,8 +5,12 @@ import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 
 import com.androidexperiments.shadercam.fragments.CameraFragment;
+import com.androidexperiments.shadercam.fragments.VideoFragment;
 import com.androidexperiments.shadercam.gl.CameraRenderer;
+import com.androidexperiments.shadercam.gl.VideoRenderer;
 import com.androidexperiments.tunnelvision.datatextures.DataSampler;
+
+import java.lang.ref.WeakReference;
 
 
 /**
@@ -14,10 +18,12 @@ import com.androidexperiments.tunnelvision.datatextures.DataSampler;
  * over time as well as a `DataSampler` as a means for how to render the time
  * in a shader program.
  */
-public class SlitScanRenderer extends CameraRenderer
+public class SlitScanRenderer extends VideoRenderer
 {
 
     private static final String TAG = SlitScanRenderer.class.getSimpleName();
+
+    WeakReference<Context> mContextWeakReference;
 
     public static final int MAX_SLITS = 16;
 
@@ -61,16 +67,14 @@ public class SlitScanRenderer extends CameraRenderer
     /**
      * Construct a new SlitScanRenderer
      * @param context
-     * @param texture
-     * @param width
-     * @param height
      * @param numSlits
      */
-    public SlitScanRenderer(Context context, SurfaceTexture texture, CameraFragment cameraFragment, int width, int height, int numSlits)
+    public SlitScanRenderer(Context context, VideoFragment cameraFragment, int numSlits)
     {
-        super(context, texture, width, height);
-        setCameraFragment(cameraFragment);
+        super(context);
+        setVideoFragment(cameraFragment);
         mNumSlits = numSlits;
+        mContextWeakReference = new WeakReference<>(context);
 
     }
 
@@ -95,12 +99,12 @@ public class SlitScanRenderer extends CameraRenderer
         super.onSetupComplete();
 
         //attach a shader that just paints everything black
-        Shader baseVs = new Shader(mContext, "baseVs.glsl", GLES20.GL_VERTEX_SHADER);
+        Shader baseVs = new Shader(mContextWeakReference.get(), "baseVs.glsl", GLES20.GL_VERTEX_SHADER);
 
-        blackProgram = new ShaderProgram(baseVs, new Shader(mContext, "blackFs.glsl", GLES20.GL_FRAGMENT_SHADER));
+        blackProgram = new ShaderProgram(baseVs, new Shader(mContextWeakReference.get(), "blackFs.glsl", GLES20.GL_FRAGMENT_SHADER));
         blackProgram.link();
 
-        Shader slitFs = new Shader(mContext, "mixedTextureFs.glsl", GLES20.GL_FRAGMENT_SHADER);
+        Shader slitFs = new Shader(mContextWeakReference.get(), "mixedTextureFs.glsl", GLES20.GL_FRAGMENT_SHADER);
         slitScanProgram = new ShaderProgram(baseVs, slitFs);
         slitScanProgram.link();
 
@@ -152,10 +156,11 @@ public class SlitScanRenderer extends CameraRenderer
 
 
     @Override
-    public void draw(){
+    public void onDrawFrame(){
+        super.onDrawFrame();
         mFrameCount++;
 
-        updatePreviewTexture();
+//        updatePreviewTexture();
 
         GLES20.glUseProgram(mCameraShaderProgram);
 
