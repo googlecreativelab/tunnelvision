@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
 
     compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    buildToolsVersion '28.0.2'
 
 
     defaultConfig {
@@ -28,11 +28,12 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation fileTree(dir: "repository", include: ['*.aar'])
+
     implementation 'com.android.support:support-fragment:27.1.1'
     implementation 'com.android.support:appcompat-v7:27.1.1' //for theming
     annotationProcessor 'com.jakewharton:butterknife:7.0.1'
     implementation 'com.jakewharton:butterknife:7.0.1' //dependency injection
     implementation 'com.uncorkedstudios.android:recordable-surfaceview:1.1.1'
+    implementation 'com.github.uncorkedstudios:shadercam:-SNAPSHOT'
 
 }
