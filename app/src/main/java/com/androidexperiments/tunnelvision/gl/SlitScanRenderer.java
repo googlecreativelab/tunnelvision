@@ -160,8 +160,6 @@ public class SlitScanRenderer extends VideoRenderer
         super.onDrawFrame();
         mFrameCount++;
 
-//        updatePreviewTexture();
-
         GLES20.glUseProgram(mCameraShaderProgram);
 
         if( mFrameCount % getNumFramesBetweenUpdate() == 0 )

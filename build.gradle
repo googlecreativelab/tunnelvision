@@ -4,9 +4,6 @@ buildscript {
     repositories {
         jcenter()
         google()
-        flatDir {
-            dirs 'repository'
-        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.4'

@@ -2,15 +2,12 @@ package com.androidexperiments.tunnelvision;
 
 import com.androidexperiments.shadercam.fragments.PermissionsHelper;
 import com.androidexperiments.shadercam.fragments.VideoFragment;
-import com.androidexperiments.shadercam.gl.VideoRenderer;
 import com.androidexperiments.tunnelvision.datatextures.DataSamplerAdapter;
 import com.androidexperiments.tunnelvision.gl.SlitScanRenderer;
 import com.androidexperiments.tunnelvision.utils.AndroidUtils;
 import com.uncorkedstudios.android.view.recordablesurfaceview.RecordableSurfaceView;
 
-import android.Manifest;
 import android.content.Intent;
-import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -29,7 +26,6 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -38,7 +34,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 
-public class MainActivity extends FragmentActivity implements PermissionsHelper.PermissionsListener {
+public class MainActivity extends FragmentActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -73,7 +69,7 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
     //Camera
     private int mCurrentCameraToUse;
 
-    private VideoFragment mCameraFragment;
+    private VideoFragment mVideoFragment;
 
     //renderers
     private SlitScanRenderer mRenderer;
@@ -92,7 +88,6 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
 
     private PermissionsHelper mPermissionsHelper;
 
-    private boolean mPermissionsSatisfied = false;
 
     private boolean mIsRecording;
 
@@ -102,8 +97,6 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
         setContentView(R.layout.activity_main);
 
         ButterKnife.bind(this);
-
-        setupCameraFragment(VideoFragment.CAMERA_FORWARD);
 
         //attach GUI events
         mDelaySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -150,10 +143,6 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
             }
         });
 
-        //setup permissions for M or start normally
-        if (PermissionsHelper.isMorHigher()) {
-            setupPermissions();
-        }
 
     }
 
@@ -166,17 +155,6 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
                 nextVisibility == View.VISIBLE ? R.drawable.collapse_arrow
                         : R.drawable.expand_arrow);
         mHorizontalScrollView.setVisibility(nextVisibility);
-    }
-
-
-    private void setupPermissions() {
-        mPermissionsHelper = PermissionsHelper.attach(this);
-        mPermissionsHelper.setRequestedPermissions(
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-
-        );
     }
 
 
@@ -248,7 +226,6 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
         mRecordButton.setBackgroundResource(R.drawable.record_off);
 
         //restart the camera with anew surface
-//        shutdownCamera();
 
         Toast.makeText(this, "File recording complete: " + getVideoFile().getAbsolutePath(),
                 Toast.LENGTH_LONG).show();
@@ -264,23 +241,22 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
 
         mCurrentCameraToUse = cameraToUse;
 
-        if (mCameraFragment != null) {
-            mCameraFragment.onPause();
-            mCameraFragment.closeCamera();
-            mCameraFragment.setCameraToUse(cameraToUse);
-            mCameraFragment.onResume();
-            mCameraFragment.openCamera();
+        if (mVideoFragment != null) {
+            mVideoFragment.onPause();
+            mVideoFragment.closeCamera();
+            mVideoFragment.setCameraToUse(cameraToUse);
+            mVideoFragment.onResume();
+            mVideoFragment.openCamera();
             return;
         }
 
-        mCameraFragment = VideoFragment.getInstance();
-        mCameraFragment.setCameraToUse(cameraToUse);
-        //mCameraFragment.setSurfaceTextureListener(mCameraTextureListener);
+        mVideoFragment = VideoFragment.getInstance();
+        mVideoFragment.setCameraToUse(cameraToUse);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.add(mCameraFragment, TAG_CAMERA_FRAGMENT);
+        transaction.add(mVideoFragment, TAG_CAMERA_FRAGMENT);
         transaction.commit();
-        mCameraFragment.setRecordableSurfaceView(mRecordableSurfaceView);
+        mVideoFragment.setRecordableSurfaceView(mRecordableSurfaceView);
 
     }
 
@@ -333,18 +309,10 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
     @Override
     protected void onResume() {
         super.onResume();
+
         mIsPaused = false;
         AndroidUtils.goFullscreen(this);
-        if (PermissionsHelper.isMorHigher() && !mPermissionsSatisfied) {
-            if (!mPermissionsHelper.checkPermissions()) {
-                return;
-            } else {
-                mPermissionsSatisfied
-                        = true; //extra helper as callback sometimes isnt quick enough for future results
-                setReady();
-
-            }
-        }
+        setReady();
 
         //if the recording was interrupted by pausing,
         //show the PlayerActivity now
@@ -356,26 +324,14 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
         mDelaySeekBar.setProgress(mDelaySeekBar.getMax());
         mRadioGroup.check(R.id.filterTunnelRepeat);
         mRecordButton.setEnabled(true);
-//
-//        if (!mRecordableSurfaceView.isAvailable()) {
-//            mRecordableSurfaceView.setSurfaceTextureListener(
-//                    mCameraTextureListener); //set listener to handle when its ready
-//        } else {
-//            setReady();
-//        }
 
     }
 
     private void shutdownCamera() {
         //protect from instances
         if (mRenderer != null) {
-//            VideoRenderer.RenderHandler handler = mRenderer.getRenderHandler();
             mRenderer = null;
-            mCameraFragment.closeCamera();
-//            if(handler != null)
-//            {
-//                handler.sendShutdown();
-//            }
+            mVideoFragment.closeCamera();
         }
     }
 
@@ -385,7 +341,6 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
 
         if (mRenderer != null && mIsRecording) {
             mRecordableSurfaceView.stopRecording();
-
         }
 
         mRecordButton.setBackgroundResource(R.drawable.record_off);
@@ -441,45 +396,23 @@ public class MainActivity extends FragmentActivity implements PermissionsHelper.
 
     private void setReady() {
         //create renderer and wait for preview texture creation
-        mRenderer = new SlitScanRenderer(this, mCameraFragment, 16);
-//        mRenderer.setOnRendererReadyListener(this);
+        mRenderer = new SlitScanRenderer(this, mVideoFragment, 16);
         mRecordableSurfaceView.resume();
 
-        if (mPermissionsSatisfied) {
-//            mRenderer.start();
-//            mCameraFragment.configureTransform(width, height);
-            try {
-                mCurrentVideoFile = getVideoFile();
-                android.graphics.Point size = new android.graphics.Point();
-                getWindowManager().getDefaultDisplay().getRealSize(size);
-                mRecordableSurfaceView.initRecorder(mCurrentVideoFile, size.x, size.y, null, null);
-                mDataSamplerAdapter = new DataSamplerAdapter(getApplicationContext(), size.x, size.y);
-                mRenderer.setSampler(mDataSamplerAdapter.next());
-                mCameraFragment.setVideoRenderer(mRenderer);
+        try {
+            setupCameraFragment(VideoFragment.CAMERA_FORWARD);
 
-            } catch (IOException ioex) {
-                Log.e(TAG, "Couldn't re-init recording", ioex);
-            }
+            mCurrentVideoFile = getVideoFile();
+            android.graphics.Point size = new android.graphics.Point();
+            getWindowManager().getDefaultDisplay().getRealSize(size);
+            mRecordableSurfaceView.initRecorder(mCurrentVideoFile, size.x, size.y, null, null);
+            mDataSamplerAdapter = new DataSamplerAdapter(getApplicationContext(), size.x, size.y);
+            mRenderer.setSampler(mDataSamplerAdapter.next());
+            mVideoFragment.setVideoRenderer(mRenderer);
 
-        } else {
-            if (PermissionsHelper.isMorHigher()) {
-                setupPermissions();
-            }
+        } catch (IOException ioex) {
+            Log.e(TAG, "Couldn't re-init recording", ioex);
         }
     }
 
-
-    @Override
-    public void onPermissionsSatisfied() {
-        mPermissionsSatisfied = true;
-    }
-
-    @Override
-    public void onPermissionsFailed(String[] strings) {
-        Log.e(TAG, "onPermissionsFailed()" + Arrays.toString(strings));
-        mPermissionsSatisfied = false;
-        Toast.makeText(this, "shadercam needs all permissions to function, please try again.",
-                Toast.LENGTH_LONG).show();
-        this.finish();
-    }
 }
