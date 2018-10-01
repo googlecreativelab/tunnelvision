@@ -7,7 +7,10 @@ import com.androidexperiments.tunnelvision.gl.SlitScanRenderer;
 import com.androidexperiments.tunnelvision.utils.AndroidUtils;
 import com.uncorkedstudios.android.view.recordablesurfaceview.RecordableSurfaceView;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -314,6 +317,28 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        if (PermissionsHelper.isMorHigher()) {
+            String[] perms = new String[]{Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE};
+
+            boolean permCheck = true;
+            for (String perm : perms) {
+               if (this.checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED) {
+                   permCheck = false;
+               }
+
+            }
+            //a little wonky here, but given the risk of slamming into a fatal camera permissions
+            //error here, we kick it back to the splash screen to ensure that there aren't orphaned
+            //GL artifacts hanging around.
+            if (!permCheck) {
+                Intent i = new Intent(this, SplashScreenActivity.class);
+                startActivity(i);
+
+            }
+        }
 
         mIsPaused = false;
         AndroidUtils.goFullscreen(this);
