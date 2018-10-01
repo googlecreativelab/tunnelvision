@@ -192,7 +192,7 @@ public class MainActivity extends FragmentActivity {
                 String time = Integer.toString(minutes) + ":" + paddedString(seconds);
 
                 mTimeElapsedTextView.setText(time);
-                if (mRenderer != null) {
+                if (mRenderer != null && mIsRecording) {
                     mTimeElapsedHandler.postDelayed(this, 1000);
                 } else {
                     mTimeElapsedTextView.setText("");
@@ -211,6 +211,7 @@ public class MainActivity extends FragmentActivity {
     private void stopRecording() {
         if (mIsRecording) {
 
+            mTimeElapsedTextView.setText("0:00");
             mRecordableSurfaceView.stopRecording();
             try {
                 mCurrentVideoFile = getVideoFile();
@@ -224,6 +225,7 @@ public class MainActivity extends FragmentActivity {
             mIsRecording = false;
         }
         mRecordButton.setBackgroundResource(R.drawable.record_off);
+        mRecordButton.setEnabled(true);
 
         //restart the camera with anew surface
 
@@ -241,12 +243,15 @@ public class MainActivity extends FragmentActivity {
 
         mCurrentCameraToUse = cameraToUse;
 
+
         if (mVideoFragment != null) {
             mVideoFragment.onPause();
             mVideoFragment.closeCamera();
             mVideoFragment.setCameraToUse(cameraToUse);
             mVideoFragment.onResume();
             mVideoFragment.openCamera();
+            Log.e(TAG, "REOPENING CAMERA");
+
             return;
         }
 
@@ -312,7 +317,6 @@ public class MainActivity extends FragmentActivity {
 
         mIsPaused = false;
         AndroidUtils.goFullscreen(this);
-        setReady();
 
         //if the recording was interrupted by pausing,
         //show the PlayerActivity now
@@ -325,6 +329,7 @@ public class MainActivity extends FragmentActivity {
         mRadioGroup.check(R.id.filterTunnelRepeat);
         mRecordButton.setEnabled(true);
 
+        setReady();
     }
 
     private void shutdownCamera() {
@@ -343,10 +348,13 @@ public class MainActivity extends FragmentActivity {
             mRecordableSurfaceView.stopRecording();
         }
 
+        mRecordableSurfaceView.stop();
+
         mRecordButton.setBackgroundResource(R.drawable.record_off);
         shutdownCamera();
 
         mIsRecording = false;
+
         super.onPause();
     }
 
@@ -396,19 +404,23 @@ public class MainActivity extends FragmentActivity {
 
     private void setReady() {
         //create renderer and wait for preview texture creation
-        mRenderer = new SlitScanRenderer(this, mVideoFragment, 16);
-        mRecordableSurfaceView.resume();
+        final android.graphics.Point size = new android.graphics.Point();
+        getWindowManager().getDefaultDisplay().getRealSize(size);
+        setupCameraFragment(VideoFragment.CAMERA_FORWARD);
 
-        try {
-            setupCameraFragment(VideoFragment.CAMERA_FORWARD);
-
-            mCurrentVideoFile = getVideoFile();
-            android.graphics.Point size = new android.graphics.Point();
-            getWindowManager().getDefaultDisplay().getRealSize(size);
-            mRecordableSurfaceView.initRecorder(mCurrentVideoFile, size.x, size.y, null, null);
+        if (mRenderer == null) {
+            mRenderer = new SlitScanRenderer(this, mVideoFragment, 16);
             mDataSamplerAdapter = new DataSamplerAdapter(getApplicationContext(), size.x, size.y);
             mRenderer.setSampler(mDataSamplerAdapter.next());
             mVideoFragment.setVideoRenderer(mRenderer);
+
+        }
+
+        mRecordableSurfaceView.resume();
+
+        try {
+            mCurrentVideoFile = getVideoFile();
+            mRecordableSurfaceView.initRecorder(mCurrentVideoFile, size.x, size.y, null, null);
 
         } catch (IOException ioex) {
             Log.e(TAG, "Couldn't re-init recording", ioex);
