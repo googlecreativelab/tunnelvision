@@ -6,6 +6,8 @@ import com.androidexperiments.tunnelvision.datatextures.DataSampler;
 
 import android.content.Context;
 import android.opengl.GLES20;
+import android.os.Looper;
+import android.util.Log;
 
 import java.lang.ref.WeakReference;
 
@@ -40,6 +42,8 @@ public class SlitScanRenderer extends VideoRenderer {
 
     protected FrameBuffer[] fbos;
 
+    protected boolean mSetupComplete;
+
     protected int mFramesBetweenUpdate = 1;
 
     public void setNumFramesBetweenUpdate(int delay) {
@@ -66,9 +70,8 @@ public class SlitScanRenderer extends VideoRenderer {
     /**
      * Construct a new SlitScanRenderer
      */
-    public SlitScanRenderer(Context context, VideoFragment cameraFragment, int numSlits) {
+    public SlitScanRenderer(Context context, int numSlits) {
         super(context);
-        setVideoFragment(cameraFragment);
         mNumSlits = numSlits;
         mContextWeakReference = new WeakReference<>(context);
     }
@@ -85,52 +88,10 @@ public class SlitScanRenderer extends VideoRenderer {
 
     @Override
     protected void onSetupComplete() {
-        //return to the window-system-provided framebuffer
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
         super.onSetupComplete();
-
-        //attach a shader that just paints everything black
-        Shader baseVs = new Shader(mContextWeakReference.get(), "baseVs.glsl",
-                GLES20.GL_VERTEX_SHADER);
-
-        blackProgram = new ShaderProgram(baseVs,
-                new Shader(mContextWeakReference.get(), "blackFs.glsl", GLES20.GL_FRAGMENT_SHADER));
-        blackProgram.link();
-
-        Shader slitFs = new Shader(mContextWeakReference.get(), "mixedTextureFs.glsl",
-                GLES20.GL_FRAGMENT_SHADER);
-        slitScanProgram = new ShaderProgram(baseVs, slitFs);
-        slitScanProgram.link();
-
-        //create a plane-renderer to do the drawing
-        mPlaneRenderer = new PlaneRenderer();
-
-        //create the FBOS
-        fbos = new FrameBuffer[MAX_SLITS];
-        mTextureWidth = (int) (((float) mSurfaceWidth) * mTextureScale);
-        mTextureHeight = (int) (((float) mSurfaceHeight) * mTextureScale);
-
-        for (int i = 0; i < MAX_SLITS; i++) {
-            fbos[i] = new FrameBuffer(mTextureWidth, mTextureHeight);
-        }
-
-        mSamplerBufferHigh = new FrameBuffer(mTextureWidth, mTextureHeight);
-        mSamplerBufferLow = new FrameBuffer(mTextureWidth / 2, mTextureHeight / 2);
-
-        GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
-
-        //paint all fbos black once
-        for (int i = 0; i < fbos.length; i++) {
-            FrameBuffer fbo = fbos[i];
-            //which one this is doesn't matter
-            FrameBuffer other = fbos[(i + 1) % fbos.length];
-            fbo.bind();
-            //the `other` texture doesn't matter its just that black program expects a texture uniform that it wont use
-            mPlaneRenderer.predraw(blackProgram.getProgramId());
-            mPlaneRenderer.draw1(blackProgram.getProgramId(), other.getTexture());
-        }
     }
+
 
 
     /**
@@ -151,6 +112,57 @@ public class SlitScanRenderer extends VideoRenderer {
     @Override
     public void onDrawFrame() {
         super.onDrawFrame();
+        if (!mSetupComplete) {
+
+            if (mSurfaceWidth == 0 || mSurfaceHeight == 0) {
+                return;
+            }
+            //return to the window-system-provided framebuffer
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
+            //attach a shader that just paints everything black
+            Shader baseVs = new Shader(mContextWeakReference.get(), "baseVs.glsl",
+                    GLES20.GL_VERTEX_SHADER);
+
+            blackProgram = new ShaderProgram(baseVs,
+                    new Shader(mContextWeakReference.get(), "blackFs.glsl", GLES20.GL_FRAGMENT_SHADER));
+            blackProgram.link();
+
+            Shader slitFs = new Shader(mContextWeakReference.get(), "mixedTextureFs.glsl",
+                    GLES20.GL_FRAGMENT_SHADER);
+            slitScanProgram = new ShaderProgram(baseVs, slitFs);
+            slitScanProgram.link();
+
+            //create a plane-renderer to do the drawing
+            mPlaneRenderer = new PlaneRenderer();
+
+            //create the FBOS
+            fbos = new FrameBuffer[MAX_SLITS];
+            mTextureWidth = (int) (((float) mSurfaceWidth) * mTextureScale);
+            mTextureHeight = (int) (((float) mSurfaceHeight) * mTextureScale);
+
+            for (int i = 0; i < MAX_SLITS; i++) {
+                fbos[i] = new FrameBuffer(mTextureWidth, mTextureHeight);
+            }
+
+            mSamplerBufferHigh = new FrameBuffer(mTextureWidth, mTextureHeight);
+            mSamplerBufferLow = new FrameBuffer(mTextureWidth / 2, mTextureHeight / 2);
+
+            GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+
+            //paint all fbos black once
+            for (int i = 0; i < fbos.length; i++) {
+                FrameBuffer fbo = fbos[i];
+                //which one this is doesn't matter
+                FrameBuffer other = fbos[(i + 1) % fbos.length];
+                fbo.bind();
+                //the `other` texture doesn't matter its just that black program expects a texture uniform that it wont use
+                mPlaneRenderer.predraw(blackProgram.getProgramId());
+                mPlaneRenderer.draw1(blackProgram.getProgramId(), other.getTexture());
+            }
+
+            mSetupComplete = true;
+        }
         mFrameCount++;
 
         GLES20.glUseProgram(mCameraShaderProgram);
@@ -203,6 +215,13 @@ public class SlitScanRenderer extends VideoRenderer {
         GLES20.glUniform1i(uNumFrames, mNumSlits);
 
         mPlaneRenderer.drawTextures(programId, mFBOTextures, 0);
+
     }
 
+    @Override
+    public void onSurfaceChanged(int width, int height) {
+        super.onSurfaceChanged(width, height);
+        Log.e(TAG, "Surface Changed");
+
+    }
 }

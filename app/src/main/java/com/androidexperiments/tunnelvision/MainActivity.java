@@ -2,13 +2,13 @@ package com.androidexperiments.tunnelvision;
 
 import com.androidexperiments.shadercam.fragments.PermissionsHelper;
 import com.androidexperiments.shadercam.fragments.VideoFragment;
+import com.androidexperiments.shadercam.gl.VideoRenderer;
 import com.androidexperiments.tunnelvision.datatextures.DataSamplerAdapter;
 import com.androidexperiments.tunnelvision.gl.SlitScanRenderer;
 import com.androidexperiments.tunnelvision.utils.AndroidUtils;
 import com.uncorkedstudios.android.view.recordablesurfaceview.RecordableSurfaceView;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -139,10 +139,7 @@ public class MainActivity extends FragmentActivity {
             @Override
             public void onClick(View v) {
 
-                int nextCamera = (mCurrentCameraToUse == VideoFragment.CAMERA_FORWARD) ?
-                        VideoFragment.CAMERA_PRIMARY : VideoFragment.CAMERA_FORWARD;
-
-                setupCameraFragment(nextCamera);
+                mVideoFragment.swapCamera();
             }
         });
 
@@ -237,7 +234,7 @@ public class MainActivity extends FragmentActivity {
     }
 
 
-    private void setupCameraFragment(int cameraToUse) {
+    private void setupVideoFragment(int cameraToUse, VideoRenderer renderer) {
         if (cameraToUse != VideoFragment.CAMERA_FORWARD
                 && cameraToUse != VideoFragment.CAMERA_PRIMARY) {
             Log.e(TAG, "INVALID CAMERA SELECTED, using primary instead");
@@ -246,26 +243,14 @@ public class MainActivity extends FragmentActivity {
 
         mCurrentCameraToUse = cameraToUse;
 
-
-        if (mVideoFragment != null) {
-            mVideoFragment.onPause();
-            mVideoFragment.closeCamera();
-            mVideoFragment.setCameraToUse(cameraToUse);
-            mVideoFragment.onResume();
-            mVideoFragment.openCamera();
-            Log.e(TAG, "REOPENING CAMERA");
-
-            return;
-        }
-
         mVideoFragment = VideoFragment.getInstance();
-        mVideoFragment.setCameraToUse(cameraToUse);
+        mVideoFragment.setRecordableSurfaceView(mRecordableSurfaceView);
+        mVideoFragment.setVideoRenderer(renderer);
+        mVideoFragment.setCameraToUse(mCurrentCameraToUse);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(mVideoFragment, TAG_CAMERA_FRAGMENT);
         transaction.commit();
-        mVideoFragment.setRecordableSurfaceView(mRecordableSurfaceView);
-
     }
 
     /**
@@ -325,10 +310,9 @@ public class MainActivity extends FragmentActivity {
 
             boolean permCheck = true;
             for (String perm : perms) {
-               if (this.checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED) {
-                   permCheck = false;
-               }
-
+                if (this.checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED) {
+                    permCheck = false;
+                }
             }
             //a little wonky here, but given the risk of slamming into a fatal camera permissions
             //error here, we kick it back to the splash screen to ensure that there aren't orphaned
@@ -354,16 +338,36 @@ public class MainActivity extends FragmentActivity {
         mRadioGroup.check(R.id.filterTunnelRepeat);
         mRecordButton.setEnabled(true);
 
-        setReady();
+        //create renderer and wait for preview texture creation
+        final android.graphics.Point size = new android.graphics.Point();
+        getWindowManager().getDefaultDisplay().getRealSize(size);
+
+        mRenderer = new SlitScanRenderer(this,16);
+
+        setupVideoFragment(VideoFragment.CAMERA_FORWARD, mRenderer);
+        mDataSamplerAdapter = new DataSamplerAdapter(getApplicationContext(), size.x, size.y);
+        mRenderer.setSampler(mDataSamplerAdapter.next());
+        mRecordableSurfaceView.resume();
+
+        try {
+            mCurrentVideoFile = getVideoFile();
+            mRecordableSurfaceView.initRecorder(mCurrentVideoFile, size.x, size.y, null, null);
+
+        } catch (IOException ioex) {
+            Log.e(TAG, "Couldn't re-init recording", ioex);
+        }
+
     }
 
+
     private void shutdownCamera() {
-        //protect from instances
-        if (mRenderer != null) {
-            mRenderer = null;
-            mVideoFragment.closeCamera();
-        }
+        mRenderer = null;
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.remove(mVideoFragment);
+        ft.commit();
+        mVideoFragment = null;
     }
+
 
     @Override
     protected void onPause() {
@@ -373,7 +377,7 @@ public class MainActivity extends FragmentActivity {
             mRecordableSurfaceView.stopRecording();
         }
 
-        mRecordableSurfaceView.stop();
+        mRecordableSurfaceView.pause();
 
         mRecordButton.setBackgroundResource(R.drawable.record_off);
         shutdownCamera();
@@ -386,6 +390,7 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
     }
 
     private String paddedString(int val) {
@@ -425,31 +430,6 @@ public class MainActivity extends FragmentActivity {
         }
 
         return file;
-    }
-
-    private void setReady() {
-        //create renderer and wait for preview texture creation
-        final android.graphics.Point size = new android.graphics.Point();
-        getWindowManager().getDefaultDisplay().getRealSize(size);
-        setupCameraFragment(VideoFragment.CAMERA_FORWARD);
-
-        if (mRenderer == null) {
-            mRenderer = new SlitScanRenderer(this, mVideoFragment, 16);
-            mDataSamplerAdapter = new DataSamplerAdapter(getApplicationContext(), size.x, size.y);
-            mRenderer.setSampler(mDataSamplerAdapter.next());
-            mVideoFragment.setVideoRenderer(mRenderer);
-
-        }
-
-        mRecordableSurfaceView.resume();
-
-        try {
-            mCurrentVideoFile = getVideoFile();
-            mRecordableSurfaceView.initRecorder(mCurrentVideoFile, size.x, size.y, null, null);
-
-        } catch (IOException ioex) {
-            Log.e(TAG, "Couldn't re-init recording", ioex);
-        }
     }
 
 }
