@@ -382,6 +382,8 @@ public class MainActivity extends FragmentActivity {
         mRecordButton.setBackgroundResource(R.drawable.record_off);
         shutdownCamera();
 
+        AndroidUtils.cleanUpFileStubs();
+
         mIsRecording = false;
 
         super.onPause();

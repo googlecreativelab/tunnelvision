@@ -48,6 +48,7 @@ public class SplashScreenActivity extends FragmentActivity implements MediaPlaye
 
         ButterKnife.bind(this);
         setupPermissions();
+        AndroidUtils.cleanUpFileStubs();
 
         mSplashVideo.setOnTouchListener(new View.OnTouchListener(){
 
