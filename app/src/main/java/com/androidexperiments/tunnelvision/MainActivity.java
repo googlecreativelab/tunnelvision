@@ -342,7 +342,7 @@ public class MainActivity extends FragmentActivity {
         final android.graphics.Point size = new android.graphics.Point();
         getWindowManager().getDefaultDisplay().getRealSize(size);
 
-        mRenderer = new SlitScanRenderer(this,16);
+        mRenderer = new SlitScanRenderer(this, 16);
 
         setupVideoFragment(VideoFragment.CAMERA_FORWARD, mRenderer);
         mDataSamplerAdapter = new DataSamplerAdapter(getApplicationContext(), size.x, size.y);
