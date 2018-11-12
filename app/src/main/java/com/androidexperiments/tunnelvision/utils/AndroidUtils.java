@@ -7,7 +7,9 @@ import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -37,6 +39,28 @@ public class AndroidUtils
      */
     public static String getStringFromFileInAssets(Context ctx, String filename) throws IOException {
         return getStringFromFileInAssets(ctx, filename, true);
+    }
+
+
+
+    /**
+     * The pattern of setting up RSV to record can orphan file stubs for unused output files,
+     * so we need to check and clean them up from time to time.
+     */
+    public static void cleanUpFileStubs() {
+
+        String path = Environment.getExternalStorageDirectory() + File.separator + "TunnelVision"
+                + File.separator;
+        File directory = new File(path);
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (int i = 0; i < files.length; i++) {
+                if (files[i].length() == 0) {
+                    files[i].delete();
+                }
+            }
+        }
+
     }
 
     public static String getStringFromFileInAssets(Context ctx, String filename, boolean useNewline) throws IOException

@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import butterknife.ButterKnife;
-import butterknife.InjectView;
+import butterknife.Bind;
 import butterknife.OnClick;
 
 /**
@@ -19,7 +19,7 @@ import butterknife.OnClick;
 public class OpenSourceLicenseActivity extends FragmentActivity
 {
 
-    @InjectView(R.id.webView)
+    @Bind(R.id.webView)
     protected WebView mWebView;
 
     @Override
@@ -28,7 +28,7 @@ public class OpenSourceLicenseActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_licenses);
 
-        ButterKnife.inject(this);
+        ButterKnife.bind(this);
 
         InputStream is;
         String htmlData = "";
